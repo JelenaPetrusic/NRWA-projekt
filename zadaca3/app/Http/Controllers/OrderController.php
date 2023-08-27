@@ -13,12 +13,11 @@ class OrderController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index()
-    {
-        $orders = Order::paginate(10);
+{
+    $orders = Order::all();
 
-        return view('orders.index',compact('orders'))
-            ->with(request()->input('page'));
-    }
+    return response()->json($orders); 
+}
 
     /**
      * Show the form for creating a new resource.
@@ -38,31 +37,39 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'orderNumber' => 'required',
-            'orderDate' => 'required',
-            'requiredDate' => 'required',
-            'shippedDate' => 'required',
-            'status' => 'required',
-            'customerNumber' => 'required'
-        ]);
-
-        Order::create($request->all());
-
-        return redirect()->route('orders.index')
-                        ->with('success','Order created successfully.');
-    
+           $order = new Order;
+           $order-> orderNumber = $request->orderNumber;
+           $order-> orderDate = $request->orderDate;
+           $order-> requiredDate = $request->requiredDate;
+           $order-> shippedDate = $request->shippeddDate;
+           $order-> status = $request->status;
+           $order-> customerNumber = $request->customerNumber;
+           $order->save();
+           return response()->json ([
+            "message" => "Order Added"
+        ], 201);
     }
-
+    
+ 
     /**
      * Display the specified resource.
      *
      * @param  \App\Models\Order  $order
      * @return \Illuminate\Http\Response
      */
-    public function show(Order $order)
+    public function show($orderNumber)
     {
-        return view('orders.show',compact('order'));
+        $order = Order :: find($orderNumber);
+        if(!empty($order))
+        {
+            return response()->json($order);
+        }
+        else
+           {
+           return response()->json([ 
+            "message" => "Book not found"
+           ], 404);
+       }
     }
 
     /**
@@ -83,33 +90,32 @@ class OrderController extends Controller
      * @param  \App\Models\Order  $order
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Order $order)
+    public function update(Request $request, $orderNumber)
     {
-        $request->validate([
-            'orderDate' => 'required',
-            'requiredDate' => 'required',
-            'shippedDate' => 'required',
-            'status' => 'required',
-            'customerNumber' => 'required'
-        ]);
-
+        $order = Order::findOrFail($orderNumber);
         $order->update($request->all());
 
-        return redirect()->route('orders.index')
-                        ->with('success','Order updated successfully');
+        return response()->json($order, 200);
     }
-
     /**
      * Remove the specified resource from storage.
      *
      * @param  \App\Models\Order  $order
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Order $order)
+    public function destroy($orderNumber)  
     {
+        if(Order::where( 'orderNumber' , $orderNumber)->exists()) {
+        $order= Order :: find($orderNumber);
         $order->delete();
 
-        return redirect()->route('orders.index')
-                        ->with('success','Order deleted successfully');
+        return response()->json ([
+          'message' => "records deleted."
+        ], 202);
+    } else {
+       return response()->json([
+        'message' => "order not found."
+       ], 404) ;
+}
     }
 }
